@@ -163,20 +163,34 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
             submitBtn.disabled = true;
 
-            // Simulate API call
-            setTimeout(() => {
-                // Hide form, show success message
-                contactForm.style.display = 'none';
-                formSuccess.classList.add('show');
+           // Real API call to Kentroi
+fetch("https://api.kentroi.com/form/cmn2wonvh00000418noup12nj", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+})
+.then(response => {
+    if (response.ok) {
+        contactForm.style.display = 'none';
+        formSuccess.classList.add('show');
 
-                // Reset form
-                contactForm.reset();
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+        contactForm.reset();
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
 
-                // Show notification
-                showNotification('Your message has been sent successfully!', 'success');
-            }, 1500);
+        showNotification('Your message has been sent successfully!', 'success');
+    } else {
+        throw new Error("Failed to send");
+    }
+})
+.catch(error => {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+
+    showNotification('Failed to send message. Try again.', 'error');
+});
         });
     }
 
