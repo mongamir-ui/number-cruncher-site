@@ -164,12 +164,12 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
 
            // Real API call to Kentroi
-fetch("https://api.kentroi.com/form/cmn2wonvh00000418noup12nj", {
+fetch("https://formspree.io/f/mbdznoed", {
     method: "POST",
     headers: {
-        "Content-Type": "application/json"
+        "Accept": "application/json"
     },
-    body: JSON.stringify(data)
+    body: new FormData(contactForm)
 })
 .then(response => {
     if (response.ok) {
