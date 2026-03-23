@@ -131,103 +131,137 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('load', animateCounters);
 
     // ==========================================
-    // CONTACT FORM - REPLACED SIMULATION WITH ACTUAL FETCH
+    // CONTACT FORM
     // ==========================================
     const contactForm = document.getElementById('contactForm');
     const formSuccess = document.getElementById('formSuccess');
 
-    if (contactForm) { // Only attach listener if the form exists
-        contactForm.addEventListener('submit', async function(e) { // Make event listener async
-            e.preventDefault(); // Prevent default form submission
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-            // Get form data using FormData API
+            // Get form data
             const formData = new FormData(this);
-            // Convert FormData to a plain object for JSON.stringify
-            const data = {
-                name: formData.get('name'),
-                email: formData.get('email'),
-                phone: formData.get('phone'), // Optional based on validation
-                subject: formData.get('subject'), // Optional based on validation
-                message: formData.get('message'),
-                // Add any other fields your specific API expects
-            };
+            const data = Object.fromEntries(formData);
 
-            // Basic validation (customize as needed)
-            // Example: Name, Email, Message are required
-            if (!data.name || !data.email || !data.message) {
-                showNotification('Please fill in all required fields (Name, Email, Message).', 'error');
+            // Basic validation
+            if (!data.name || !data.email || !data.phone || !data.subject || !data.message) {
+                showNotification('Please fill in all required fields', 'error');
                 return;
             }
 
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(data.email)) {
-                showNotification('Please enter a valid email address.', 'error');
+                showNotification('Please enter a valid email address', 'error');
                 return;
             }
 
+            // Simulate form submission (in production, connect to EmailJS, Formspree, or backend)
             const submitBtn = contactForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn ? submitBtn.innerHTML : 'Submit'; // Store original text
-            const originalDisabledState = submitBtn ? submitBtn.disabled : false; // Store original disabled state
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
+            submitBtn.disabled = true;
 
-            if (submitBtn) { // Update button state while submitting
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
-                submitBtn.disabled = true;
-            }
+            // Simulate API call
+            setTimeout(() => {
+                // Hide form, show success message
+                contactForm.style.display = 'none';
+                formSuccess.classList.add('show');
 
-            try {
-                // Perform the actual API call
-                const response = await fetch("https://api.kentroi.com/form/cmn2wonvh00000418noup12nj", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json" // Good practice to include
-                    },
-                    body: JSON.stringify(data)
-                });
+                // Reset form
+                contactForm.reset();
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
 
-                if (response.ok) { // Check if response status is 200-299 (success)
-                    contactForm.style.display = 'none'; // Hide the form
-                    if (formSuccess) { // Show success message if element exists
-                        formSuccess.style.display = 'block'; // Ensure it's visible
-                        formSuccess.classList.add('show'); // Apply any specific success styling/animation
-                    }
-                    contactForm.reset(); // Clear form fields
-                    showNotification('Your message has been sent successfully!', 'success');
-                } else {
-                    // Handle API-specific errors (e.g., validation errors, server-side issues)
-                    let errorMsg = `Failed to send message. Server responded with ${response.status}. Please try again.`;
-                    try {
-                        const errorResponseData = await response.json();
-                        if (errorResponseData && errorResponseData.message) {
-                            errorMsg = errorResponseData.message;
-                        } else if (errorResponseData && errorResponseData.errors) { // Common for validation errors from backend
-                            // Concatenate all validation error messages
-                            errorMsg = Object.values(errorResponseData.errors).flat().join(' ');
-                            if (errorMsg === '') { // Fallback if no specific messages
-                                errorMsg = `Validation failed: ${response.statusText}`;
-                            }
-                        } else if (response.statusText) {
-                            errorMsg = `Error: ${response.status} ${response.statusText}`;
-                        }
-                    } catch (jsonError) {
-                        console.warn('API error response was not JSON or failed to parse:', jsonError);
-                        // Fallback to a generic message if JSON parsing fails
-                    }
-                    showNotification(errorMsg, 'error');
-                }
-            } catch (networkError) {
-                // Handle network-related errors (e.g., no internet, CORS issues)
-                console.error('Network error during form submission:', networkError);
-                showNotification('Could not connect to the server. Please check your internet connection and try again.', 'error');
-            } finally {
-                // Always reset the button state
-                if (submitBtn) {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = originalDisabledState; // Restore original state, or always false if desired
-                }
-            }
+                // Show notification
+                showNotification('Your message has been sent successfully!', 'success');
+            }, 1500);
         });
+    }
+
+    // Notification system
+    function showNotification(message, type) {
+        // Remove existing notifications
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+            <button class="notification-close"><i class="fas fa-times"></i></button>
+        `;
+
+        // Add styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 16px 24px;
+            background: ${type === 'success' ? '#2ea043' : '#f85149'};
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-family: 'Inter', sans-serif;
+            max-width: 350px;
+        `;
+
+        // Add animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .notification-close {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                padding: 5px;
+                margin-left: 10px;
+                opacity: 0.8;
+                transition: opacity 0.3s;
+            }
+            .notification-close:hover {
+                opacity: 1;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Close button
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.style.animation = 'slideOut 0.3s ease forwards';
+            setTimeout(() => notification.remove(), 300);
+        });
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
     }
 
     // ==========================================
